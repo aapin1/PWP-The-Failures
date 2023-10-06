@@ -1,0 +1,24 @@
+import OPi.GPIO as gpio
+import time
+
+motor1 = 'PA8'
+motor2 = 'PA9'
+motor3 = 'PA10'
+motor4 = 'PA20'
+
+def move_forward(motor1,motor2,motor3,motor4):
+  gpio.output(motor1,gpio.high)
+  gpio.output(motor2,gpio.high)
+  gpio.output(motor3,gpio.high)
+  gpio.output(motor4,gpio.high)
+
+  time.sleep(5)
+
+  gpio.output(motor1,gpio.low)
+  gpio.output(motor2,gpio.low)
+  gpio.output(motor3,gpio.low)
+  gpio.output(motor4,gpio.low)
+
+move_forward(motor1,motor2,motor3,motor4)
+
+  
