@@ -1,0 +1,34 @@
+import RPi.GPIO as gpio
+import time
+
+gpio.setmode(gpio.BOARD) #sets mode to 'board' ; allows gpio to physically call rasp. pi pins
+
+#configures the following pins to output pins, allowing you to set a high or low output value
+gpio.setup(11, gpio.OUT) 
+gpio.setup(12, gpio.OUT)
+gpio.setup(13, gpio.OUT)
+gpio.setup(15, gpio.OUT)
+
+def move_forward():  #define the function
+ 
+  #sets the previously defined pins to a high output
+  gpio.output(11,gpio.HIGH)
+  gpio.output(12,gpio.HIGH)
+  gpio.output(13,gpio.HIGH) 
+  gpio.output(15,gpio.HIGH)
+
+  time.sleep(1) #after 1 second stop
+
+  #sets the high output motors to a low output (stopping it)
+  gpio.output(11,gpio.LOW)
+  gpio.output(12,gpio.LOW)
+  gpio.output(13,gpio.LOW) 
+  gpio.output(15,gpio.LOW)
+
+
+#the following lines of code check if the rasp. pi is receiving power:
+power_status_pin = 2  #pin where h-bridge puts power into rasp. pi
+gpio.setup(power_status_pin, gpio.IN)
+if gpio.input(power_status_pin): #if rasp. pi is receiving power
+  move_forward()  
+  
