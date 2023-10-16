@@ -59,7 +59,7 @@ def add():  #Create account
   quit_button = Button(make,text = "Quit",command = lambda:exit(make))
   quit_button.pack()
   make.mainloop()
-def create_account():
+def create_account(): #Sends the info to keygen function
   fname_value = fname.get()
   lname_value = lname.get()
   username_value = username.get()
@@ -70,13 +70,13 @@ def exit(thing):
   start()
 
 def keygen(fname,lname,username,password):  #Generates a random key and saves to database
-
+  
   salt = os.urandom(16)
   # hashed = hashlib.pbkdf2_hmac('sha256',password.encode('utf-8'),salt
   password1 = password.encode('utf-8')
   password_hash = hashlib.pbkdf2_hmac('sha384', password1, salt, 100000)
   # cursor.execute('INSERT INTO emp VALUES ({key}, "{name}", "{lname}", "{user}", "{password}")'.format(key=keygen, name=fname, lname=lname, user=username, password=password_hash))
-  cursor.execute( "INSERT INTO user_info (first_name, last_name, username, password_hash, salt) VALUES (?, ?, ?, ?, ?)",
+  cursor.execute( "INSERT INTO user_info (fname, lname, username, password_hash, salt) VALUES (?, ?, ?, ?, ?)",
     (fname, lname, username, password_hash, salt))
 
   connected.commit()
@@ -119,7 +119,7 @@ def login(username, password):  #Checks if username and password match within da
   cursor = sqlite3.connect('database.db')
   con = cursor.cursor()
   con.execute(
-  "SELECT first_name, password_hash, salt FROM user_info WHERE username = ?",
+  "SELECT fname, password_hash, salt FROM user_info WHERE username = ?",
   (user, ))
   find = con.fetchone()
   con.close()
