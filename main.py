@@ -1,104 +1,198 @@
-# LINK TO THE PROGRAMMING PLAN : https://docs.google.com/document/d/1N-U7uMd1P9Ag5RtAJrodDq-DSvFPyUtatrgQ6N0LC2s/edit?usp=sharing
+
+from tkinter import *
+from tkinter import messagebox
+import sqlite3
+import hashlib
+import random
+import os
+import tkinter
 
 
-import array as arr  
+def start():  #Main menu
+  global root
+  root = Tk()
+  root.geometry()
+  root.geometry("450x500")
+  root.title("Login")
+  intro = Label(root, text="Create account or login")
+  intro.pack()
+  create = Button(root, text="Create account", command = add) #Goes to add account
+  create.pack()
+  login = Button(root, text="Login", command = check) #Check function allows the user to login
+  login.pack()
+  quit_button = Button(root,text = "Quit",command = root.destroy) #Shut down
+  quit_button.pack()
+  root.mainloop()
 
-data_list1 = arr.array('f', [])
-data_list2 = arr.array('f', [])
+def add():  #Create account
+  root.destroy()
+  global make
+  global fname
+  global lname
+  global username
+  global password
+  make = Tk()
+  make.geometry("450x500")
+  make.title("Create account")
+  fname = StringVar()
+  lname = StringVar()
+  username = StringVar()
+  password = StringVar()
+  name_label = Label(make,text = "Enter first name")
+  name_label.pack()
+  name = Entry(make, textvariable=fname)
+  name.pack()
+  lname_label = Label(make,text = "Enter last name")
+  lname_label.pack() 
+  lname = Entry(make, textvariable=lname)
+  lname.pack()
+  username_label = Label(make, text ="Enter your username")
+  username_label.pack()
+  username_input = Entry(make, textvariable=username)
+  username_input.pack()
+  password_label = Label(make, text = "Enter your password")
+  password_label.pack()
+  password_input = Entry(make, textvariable=password)
+  password_input.pack()
+  create = Button(make, text="Create account", command=create_account)
+  create.pack()
+  quit_button = Button(make,text = "Quit",command = lambda:exit(make))
+  quit_button.pack()
+  make.mainloop()
+def create_account():
+  fname_value = fname.get()
+  lname_value = lname.get()
+  username_value = username.get()
+  password_value = password.get()
+  keygen(fname_value, lname_value, username_value, password_value)
+def exit(thing):
+  thing.destroy()
+  start()
 
-def findMaleBodyDensity():
-  chestSkinfold = float(input("Enter chest skinfold (mm): "))
-  data_list1.append(chestSkinfold)
-  abdomenSkinfold = float(input("Enter abdomen skinfold (mm): "))
-  data_list1.append(abdomenSkinfold)
-  thighSkinfold = float(input("Enter thigh skinfold (mm): "))
-  data_list1.append(thighSkinfold)
-  age = int(input("Enter your age in years: "))
-  data_list1.append(age)
-  waistCircumfrence = float(input("Enter your waist circumfrence in m: "))
-  data_list1.append(waistCircumfrence)
-  forearmCircumference = float(input("Enter your forearm circumference in m: "))
-  data_list1.append(forearmCircumference)
-  sumOfAllSkinfolds =(chestSkinfold+abdomenSkinfold+thighSkinfold)
-  data_list1.append(sumOfAllSkinfolds)
-  BodyDensity = 1.0990750 - 0.0008209*(sumOfAllSkinfolds) + 0.0000026* (sumOfAllSkinfolds**2) - 0.0002017*(age) - 0.005675*(waistCircumfrence) + 0.018586*(forearmCircumference)
-  data_list1.append(BodyDensity)
-  bodyFat = (495 / BodyDensity) - 450
-  data_list1.append(bodyFat)
-  print(bodyFat)
-  if bodyFat <= 0:
-    print("Oh, your body fat percentage calculations came out as a negative number or zero so you probably have done something wrong, so please make sure you put in the right numbers!")
-    #print(type(data_list1))
+def keygen(fname,lname,username,password):  #Generates a random key and saves to database
 
-def findFemaleBodyDensity():
-  tricepsSkinfold = float(input("Enter triceps skinfold (mm): "))
-  data_list2.append(tricepsSkinfold)
-  thighSkinfold = float(input("Enter thigh skinfold (mm): "))
-  data_list2.append(thighSkinfold)
-  suprailiacSkinfold = float(input("Enter suprailiac skinfold (mm): "))
-  data_list2.append(suprailiacSkinfold)
-  age = int(input("Enter your age in years: "))
-  data_list2.append(age)
-  glutealCircumference = float(input("Enter your gluteal circumference in cm: "))
-  data_list2.append(glutealCircumference)
-  sumOfAllSkinfolds =(tricepsSkinfold+suprailiacSkinfold+thighSkinfold)
-  data_list2.append(sumOfAllSkinfolds)
+  salt = os.urandom(16)
+  # hashed = hashlib.pbkdf2_hmac('sha256',password.encode('utf-8'),salt
+  password1 = password.encode('utf-8')
+  password_hash = hashlib.pbkdf2_hmac('sha384', password1, salt, 100000)
+  # cursor.execute('INSERT INTO emp VALUES ({key}, "{name}", "{lname}", "{user}", "{password}")'.format(key=keygen, name=fname, lname=lname, user=username, password=password_hash))
+  cursor.execute( "INSERT INTO user_info (first_name, last_name, username, password_hash, salt) VALUES (?, ?, ?, ?, ?)",
+    (fname, lname, username, password_hash, salt))
 
-  BodyDensity = 1.1470292 - 0.0009376*(sumOfAllSkinfolds) + 0.0000030* (sumOfAllSkinfolds**2) - 0.0001156*(age) - 0.0005839*(glutealCircumference)
-  data_list2.append(BodyDensity)
-  bodyFat = (495 / BodyDensity) - 450
-  data_list2.append(bodyFat)
-  print("Your body fat is:",bodyFat,"%")
-  if bodyFat <= 0:
-    print("Oh, your body fat percentage calculations came out as a negative number or zero so you probably have done something wrong, so please make sure you put in the right numbers")
-    
+  connected.commit()
+  connected.close()
+  make.destroy()
+  messagebox.showinfo('',"Your account has been created!")
+  start()
 
+def check(): #Login Function
+  root.destroy()
+  global check_window
+  global userNameLog
+  global passwordLog
+  check_window = Tk()
+  check_window.geometry("450x500")
+  check_window.title("Login")
+  userNameLog = StringVar()
+  passwordLog = StringVar()
+  userName_label = Label(check_window, text = "Enter your username")
+  userName_label.pack()
+  userName = Entry(check_window, textvariable=userNameLog)
+  userName.pack()
+  password_label = Label(check_window, text = "Enter your password")
+  password_label.pack()
+  password = Entry(check_window, textvariable=passwordLog, show = '*')
+  password.pack()
+  loginer = Button(check_window,text="Enter",command = preLogin) #Calls function that will send values over
+  loginer.pack()
+  quit_button = Button(check_window,text = "Quit",command = lambda:exit(check_window))
+  quit_button.pack()
+  check_window.mainloop()
+def preLogin(): #Sends to login function
+  userLog = userNameLog.get()
+  passLog = passwordLog.get()
+  login(userLog, passLog)
 
-# def pop_function():
-#   choice = input("Are you a male or female: ")
-#   if choice.lower() == "male":
-#     print(data_list1)
-#     pop = int(input("For the data you want to delete, type the number: ")) 
-#     pop = pop-1
-#     data_list1.pop(pop)
-#     print(data_list1)
-#   if choice.lower() == "female":
-#     print(data_list2)
-#     pop = int(input("For the data you want to delete, type the number: "))
-#     pop = pop-1
-#     data_list1.pop(pop)
-#     print(data_list2)
-  
-def menu():
-  while True:
-    print("1. Find Male Body Density")
-    print("2. Find Female Body Density")
-    print("3. Delete all Data")
-    mode = input("Enter your choice: ")
-    #userGender = input("Enter your gender(Male/Female): ")
-    
-    if mode == "1":
-        findMaleBodyDensity()
-
-    elif mode == "2":
-        findFemaleBodyDensity()
-
-    elif mode == "3":
-        gender = input("What is your gender?\n Enter '1' for male\n Enter '2' for female: ")
-        if gender == "1":
-          for x in data_list1[:]: 
-            data_list1.pop(-1)
-          print(data_list1)
-          break
-        elif gender == "2":
-          for y in data_list2[:]:
-            data_list2.pop(-1)
-          print(data_list2)
-          break
+def login(username, password):  #Checks if username and password match within database
+  user = str(username)
+  passwo = str(password)
+  cursor = sqlite3.connect('database.db')
+  con = cursor.cursor()
+  con.execute(
+  "SELECT first_name, password_hash, salt FROM user_info WHERE username = ?",
+  (user, ))
+  find = con.fetchone()
+  con.close()
+  if find:
+    userStored, passwordStored, saltStored, *_ = find 
+    password1 = passwo.encode('utf-8')
+    password_hash = hashlib.pbkdf2_hmac('sha384', password1, saltStored, 100000)
+    if password_hash == passwordStored:
+      menu(user)
     else:
-      print("Not an available option")
-      break
+      messagebox.showerror("", "Incorrect username or password")
+      
+  # cursor.execute("SELECT * FROM emp WHERE user = '{username}' AND pass = '{password}'".format(username=user,password = password_hash))
+  # result = cursor.fetchall()
+  # if result != []:
+  #    menu(user)
+  # else:
+  #   messagebox.showinfo('',"Your account does not match our databases")
+  #   check_window.destroy()
+  #   start()
+    
+  
+connected = sqlite3.connect("database.db")
 
-menu()
+def menu(u):  #The menu when you login
+  userName = str(u)
+  check_window.destroy()
+  menu = tkinter.Tk()
+  welcomemsg = Label(menu, text = f"Welcome {userName}")
+  welcomemsg.grid(row = 0, column = 0)
+  back_button = tkinter.Button(menu, text="Back")
+  forward_button = tkinter.Button(menu, text="Forward")
+  left_button = tkinter.Button(menu, text="Left")
+  right_button = tkinter.Button(menu, text="Right")
+
+  log = tkinter.Frame(menu)
+  log.grid(row=6, column=0, padx=10, pady=10)
+  logLabel = tkinter.Label(log, text="Log")
+  logText = tkinter.Text(log, width=30, height=10)
+  logLabel.grid(row=0, column=0, padx=5, pady=5)
+  logText.grid(row=1, column=0, padx=5, pady=5)
+
+  video = tkinter.Frame(menu)
+  video.grid(row = 1, column = 0)
+  videoCanvas = tkinter.Canvas(video, width=500, height=300, bg = 'grey')
+  videoCanvas.grid(row = 0, column = 0)
+  
+  back_button.grid(row=2, column=2, padx=10, pady=10)
+  forward_button.grid(row=1, column=2, padx=10, pady=10)
+  left_button.grid(row=2, column=1, padx=10, pady=10)
+  right_button.grid(row=2, column=3, padx=10, pady=10)
+
+  quit_button = Button(menu, text = "Quit",command = lambda:exit(menu))
+  quit_button.grid(row = 3, column = 2)
+  menu.mainloop() 
+# Creating a cursor object using the cursor method
+cursor = connected.cursor()
+
+# Creating a table
+cursor.execute('''CREATE TABLE IF NOT EXISTS user_info (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+fname TEXT,
+lname TEXT,
+username TEXT,
+password_hash BLOB,
+salt BLOB)''')
 
 
+
+
+
+# Commiting the changes
+connected.commit()
+
+
+start()
