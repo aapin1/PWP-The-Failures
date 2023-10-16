@@ -1,0 +1,230 @@
+import tkinter as tk
+from tkinter import messagebox
+import sqlite3
+import hashlib
+import os
+
+conn = sqlite3.connect("user_accounts.db")  #makes a connection with database file
+cursor = conn.cursor()  #cursor is used to execute SQL commands and interact with DB
+cursor.execute('''CREATE TABLE IF NOT EXISTS user_info (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  first_name TEXT,
+                  last_name TEXT,
+                  username TEXT,
+                  password_hash BLOB,
+                  salt BLOB
+                  )''')  #creates a table if it doesn't exist already
+#table has first and last name, username, and password
+#BLOB means binary large object, which is used for storing
+#hashed data
+conn.commit()
+conn.close()
+root = tk.Tk()  #initializes the GUI tkinter
+root.title("Programming With a Purpose - GUI Login")
+
+#None so that we can change values later on; None is a placeholder
+first_name_entry = None
+last_name_entry = None
+username_entry = None
+password_entry = None
+login_username_entry = None
+login_password_entry = None
+welcome_window = None
+create_account_window = None
+first_name = None
+
+
+#the first function; when you press the Create Account button
+def create_account():
+  global first_name_entry, last_name_entry, username_entry, password_entry, create_account_window
+
+  #creates a window with title Create Account
+  create_account_window = tk.Toplevel(root)
+  create_account_window.title("Create Account")
+  #creates four labels so user knows what to enter
+  first_name_label = tk.Label(create_account_window, text="First Name:")
+  last_name_label = tk.Label(create_account_window, text="Last Name:")
+  username_label = tk.Label(create_account_window, text="Username:")
+  password_label = tk.Label(create_account_window, text="Password:")
+  #creates an input area for user to type in their data
+  first_name_entry = tk.Entry(create_account_window)
+  last_name_entry = tk.Entry(create_account_window)
+  username_entry = tk.Entry(create_account_window)
+  password_entry = tk.Entry(create_account_window, show="*")
+  #creates a save button that calls the save_account function when clicked
+  save_button = tk.Button(create_account_window, text="Save")
+  save_button.configure(command=save_account)
+  #making all the buttons/entries look nice and symmetrical
+  first_name_label.grid(row=0, column=0, padx=10, pady=5)
+  first_name_entry.grid(row=0, column=1, padx=10, pady=5)
+  last_name_label.grid(row=1, column=0, padx=10, pady=5)
+  last_name_entry.grid(row=1, column=1, padx=10, pady=5)
+  username_label.grid(row=2, column=0, padx=10, pady=5)
+  username_entry.grid(row=2, column=1, padx=10, pady=5)
+  password_label.grid(row=3, column=0, padx=10, pady=5)
+  password_entry.grid(row=3, column=1, padx=10, pady=5)
+
+  save_button.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+
+
+#this function is the one that is called when the user clicks the save button in the Create Account tab
+def save_account():
+  global create_account_window  #still refers to the same Create Account window, defined in the previous function
+
+  first_name = first_name_entry.get()  #gets the value of the first_name label
+  last_name = last_name_entry.get()
+  username = username_entry.get()
+  password = password_entry.get()
+
+  salt = os.urandom(16)  #generates a random binary string (salt) of 16
+
+  password_bytes = password.encode('utf-8')
+  password_hash = hashlib.pbkdf2_hmac('sha256', password_bytes, salt, 100000)
+
+  conn = sqlite3.connect("user_accounts.db")  #connects to the DB file
+  cursor = conn.cursor()  #allows interaction with the file
+  cursor.execute( "INSERT INTO user_info (first_name, last_name, username, password_hash, salt) VALUES (?, ?, ?, ?, ?)",
+      (first_name, last_name, username, password_hash, salt))  #creates a table in the DB, which we then insert a tuple of the actual values
+  conn.commit()
+  conn.close()
+
+  messagebox.showinfo(
+      "Create Account",
+      f"Account created successfully:\nFirst Name: {first_name}\nLast Name: {last_name}\nUsername: {username}"
+  )  #Tell user that it has successfully been created
+
+  create_account_window.destroy()
+
+
+#this is the function that is called when the user clicks the login button
+def login():
+  global login_username_entry, login_password_entry
+  login_window = tk.Toplevel(root)  #new window with title Login
+  login_window.title("Login")
+
+  #creates the username label & entry with dimensions
+  login_label = tk.Label(login_window, text="Username:")
+  login_username_entry = tk.Entry(login_window)
+  login_label.grid(row=0, column=0, padx=10, pady=5)
+  login_username_entry.grid(row=0, column=1, padx=10, pady=5)
+
+  #creates the password label & entry with dimensions
+  login_password_label = tk.Label(login_window, text="Password:")
+  login_password_entry = tk.Entry(login_window, show="*")
+  login_password_label.grid(row=1, column=0, padx=10, pady=5)
+  login_password_entry.grid(row=1, column=1, padx=10, pady=5)
+
+  #creates the Login button; calls authenticate_user() when clicked
+  #dimensions of Login button are also added below
+  login_button = tk.Button(login_window, text="Login")
+  login_button.configure(command=authenticate_user)
+  login_button.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
+
+
+#this function is called when the Login button is clicked, after the user types in their username and password
+def authenticate_user():
+  global welcome_window
+  global first_name
+
+  #getting the values the user entered for login
+  entered_username = login_username_entry.get()
+  entered_password = login_password_entry.get()
+
+  conn = sqlite3.connect("user_accounts.db")
+  cursor = conn.cursor()
+  cursor.execute(
+      "SELECT first_name, password_hash, salt FROM user_info WHERE username = ?",
+      (entered_username, ))
+  #SELECT selects the columns that you're retrieving from DB (first name, hashed password, and salt)
+  #the FROM statement verifies the DB from which you're retrieving from
+  #WHERE is a filter command; checks if the username is the same as the username the user entered
+
+  result = cursor.fetchone()  #actually retreives the data specified above
+  conn.close()
+
+  if result:  #if the variable HAS values (meaning that there is a username that matches the user's in the database)
+
+    stored_first_name, stored_password_hash, stored_salt = result
+    #unpacking the tuple values into variables that were previously stored in result
+
+    #hashing the password
+    entered_password_bytes = entered_password.encode('utf-8')
+    entered_password_hash = hashlib.pbkdf2_hmac('sha256', entered_password_bytes, stored_salt, 100000)
+
+    #if the login user's password is same to the password in database
+    if stored_password_hash == entered_password_hash:
+      first_name = stored_first_name
+      #letting user into the new GUI
+      GUI()
+      welcome_window = tk.Toplevel(root)
+      welcome_window.title("Welcome")
+      welcome_label = tk.Label(welcome_window, text=f"Welcome, {first_name}!")
+      welcome_label.pack(padx=20, pady=20)
+      GUI()
+
+    else:
+      messagebox.showerror("Login", "Incorrect password")
+  else:
+    messagebox.showerror("Login", "User not found")
+
+
+def quit_app():
+  root.quit()
+
+def GUI():
+    main_window = tk.Toplevel(root)
+    main_window.title("||-~~- GRAPHICAL USER INTERFACE -~~-||")
+
+    #lower left
+    log_frame = tk.Frame(main_window)
+    log_frame.grid(row=1, column=0, padx=10, pady=10)
+
+    #stuff in lower left canvas
+    log_label = tk.Label(log_frame, text="Log:")
+    log_label.grid(row=0, column=0, padx=5, pady=5)
+    log_text = tk.Text(log_frame, width=30, height=10)
+    log_text.grid(row=1, column=0, padx=5, pady=5)
+
+    #upper left
+    canvas_upper_left = tk.Canvas(main_window, width=200, height=200)
+    canvas_upper_left.grid(row=0, column=0, padx=2, pady=10)
+
+   #stuff in upper left canvas
+    video_label = tk.Label(canvas_upper_left, text="Video Feed:")
+    video_label.grid(row=0, column=0, padx=5, pady=5)
+    video_canvas = tk.Canvas(canvas_upper_left, width=400, height=300, bg="black")
+    video_canvas.grid(row=1, column=0, padx=5, pady=5)
+
+
+    #upper right
+    canvas_upper_right = tk.Canvas(main_window, width=200, height=200)
+    canvas_upper_right.grid(row=0, column=1, padx=2, pady=10)
+
+    #stuff in upper right canvas
+    direction_frame = tk.Frame(main_window)
+    direction_frame.grid(row=0, column=2, padx=10, pady=10)
+    fwd_button = tk.Button(direction_frame, text="FWD")
+    bkwd_button = tk.Button(direction_frame, text="BKWD")
+    left_button = tk.Button(direction_frame, text="LEFT")
+    right_button = tk.Button(direction_frame, text="RIGHT")
+    stop_button = tk.Button(direction_frame, text="STOP")
+    fwd_button.grid(row=0, column=1, padx=5, pady=5)
+    left_button.grid(row=1, column=0, padx=5, pady=5)
+    stop_button.grid(row=1, column=1, padx=5, pady=5)
+    right_button.grid(row=1, column=2, padx=5, pady=5)
+    bkwd_button.grid(row=2, column=1, padx=5, pady=5)
+
+
+
+
+
+#creating all the buttons in the 'home' screen: create account, login, and quit
+create_account_button = tk.Button(root, text="Create Account", command=create_account)
+login_button = tk.Button(root, text="Login", command=login)
+quit_button = tk.Button(root, text="Quit", command=quit_app)
+
+create_account_button.grid(row=0, column=0, padx=10, pady=10)
+login_button.grid(row=0, column=1, padx=10, pady=10)
+quit_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+
+root.mainloop()
